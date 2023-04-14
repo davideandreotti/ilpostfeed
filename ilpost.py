@@ -74,8 +74,8 @@ for id in sorted_ids:
     if id not in latest:
         elements=sorted_articles[id]
         #sending to telegram
-        print(elements['title'], elements['headline'], elements['link'])
-        #sendArticle(elements['title'], elements['headline'], elements['link'])
+        #print(elements['title'], elements['headline'], elements['link'])
+        sendArticle(elements['title'], elements['headline'], elements['link'])
 
 f = open("latest_article.txt", "w")
 f.write(json.dumps(sorted_ids))
