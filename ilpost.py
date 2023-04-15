@@ -1,12 +1,3 @@
-'''
-home post type-post category-italia 
-
-home post type-post category-bits
-
-archive arc-flashes closed flashes type-flashes tag-arnold-schwarzenegger selected current
-
-archive arc-flashes closed flashes type-flashes
-'''
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -21,8 +12,9 @@ chatid='-1001216458621'
 pages=['https://ilpost.it', 'https://www.ilpost.it/bits/', 'https://www.ilpost.it/flashes/']
 
 home_request = requests.get(pages[0])
-#bits_request=requests.get(pages[1])
-#flashes_request=requests.get(pages[2])
+bits_request=requests.get(pages[1])
+flashes_request=requests.get(pages[2])
+#print(bits_request.content)
 
 def sendArticle(title, headline, link):
     method='/sendMessage'
@@ -38,14 +30,34 @@ def contentProcessing(scan, page):
         if page in article['class']:
             elements=dict()
             id=article['id']
+            if 'adv' in id:
+                continue
             elements['id']=id
-            #print(id)
             elements['img_url']=article.find('img')['src']
-            #print(img_url)
             content=article.find("div", {"class": "entry-content"})
             elements['title'] = content.h2.a['title']
             elements['headline'] = content.p.a['title']
             elements['link']=content.h2.a['href'].split('?')[0]
+            #if strange link report html to admin
+            if elements['link']=='https://www.ilpost.it/':
+                data = {'chat_id': admin, 'text': article}
+                headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+                r = requests.post(base+token+'/sendMessage', json=data, headers=headers)
+            articles[id]=elements
+    return articles
+def flashesProcessing(scan):
+    articles=dict()
+    for article in scan.find_all('article'):
+        if 'flashes' in article['class']:
+            elements=dict()
+            id=article['id']
+            elements['id']=id
+            #print(id)
+            elements['img_url']=article.find('img')['src']
+            #print(img_url)
+            elements['title']=article.div['data-posttitle']
+            elements['headline'] = article.div.div.a['href'] + '\n' + article.div.div.time['datetime']
+            elements['link']=article.div.h2.a['href']
             articles[id]=elements
     return articles
 
@@ -58,12 +70,21 @@ f.close()
 #scanning articles to retrieve information
 #print(bits_request.headers)
 scan=BeautifulSoup(home_request.content.decode(encoding='utf-8'), features="html.parser")
-#scan_bits=BeautifulSoup(bits_request.content.decode(encoding='utf-8'), features="html.parser")
+scan_bits=BeautifulSoup(bits_request.content.decode(encoding='utf-8'), features="html.parser")
+scan_flashes=BeautifulSoup(flashes_request.content.decode(encoding='utf-8'), features="html.parser")
+
 #print(scan)
-articles=dict()
 articles=contentProcessing(scan, "home")
-#articles_bits=contentProcessing(scan_bits, "bits")
-#print(articles_bits)
+articles_bits=contentProcessing(scan_bits, "home")
+articles_flashes = flashesProcessing(scan_flashes)
+#print(articles_flashes)
+
+#merge lists
+articles.update(articles_bits)
+articles.update(articles_flashes)
+#print(articles)
+
+
 
 
 #merging old vs new scrape
