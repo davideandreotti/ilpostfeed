@@ -42,9 +42,9 @@ def contentProcessing(scan, page):
             elements['id']=id
             elements['img_url']=article.find('img')['src']
             content=article.find("div", {"class": "entry-content"})
-            elements['title'] = content.h2.a['title']
+            elements['title'] = content.h2.text.strip()
             if page == 'home':
-                elements['headline'] = content.p.a['title']
+                elements['headline'] = content.p.text.strip()
             elif page == 'bits':
                 elements['headline'] = content.div.a.text+' | '+content.div.span.text
             elements['section'] = page
